@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Wings Arena TV</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app" class="app">
+    <!-- Top Zone: 1920x180 -->
+    <header id="top-zone" class="top-zone">
+      <div class="datetime" id="datetime"><span id="date-text"></span><span id="time-text"></span></div>
+      <div class="logo" id="logo">
+        <img id="logo-img" alt="Wings Arena" />
+      </div>
+      <div class="weather" id="weather">
+        <div class="weather-left">
+          <div id="weather-icon" role="img" aria-label="Weather"></div>
+          <span id="weather-temp" class="weather-temp"></span>
+        </div>
+        <div class="weather-range">
+          <span class="min" id="weather-min"></span>
+          <div class="range-bar">
+            <div class="range-fill" id="weather-fill"></div>
+            <div class="range-current" id="weather-current"></div>
+          </div>
+          <span class="max" id="weather-max"></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Middle Zone: 1920x720 -->
+    <main id="middle-zone" class="middle-zone">
+      <section class="static-ads">
+        <img id="static-image" alt="Static Ad" />
+      </section>
+      <section class="dynamic-ads">
+        <video id="video-player" muted autoplay playsinline></video>
+      </section>
+    </main>
+
+    <!-- Bottom Zone: 1920x180 -->
+    <footer id="bottom-zone" class="bottom-zone">
+      <div class="ticker">
+        <span class="ticker-source" id="ticker-source"></span>
+        <div class="ticker-track">
+          <div class="ticker-content" id="ticker-content"></div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
+
+

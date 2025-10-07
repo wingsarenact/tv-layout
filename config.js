@@ -1,4 +1,6 @@
 window.WINGS_TV_CONFIG = {
+    // Optional external data host (GitHub Pages data repo)
+    dataBaseUrl: 'https://wingsarenact.github.io/tv-data',
   // Autoscale the 1920x1080 canvas to the player window. Set to false for exact 1:1.
   autoScale: true,
   // Location for weather (Newark, DE as example - update as needed)
@@ -43,8 +45,14 @@ window.WINGS_TV_CONFIG = {
     scrollSpeedPxPerSec: 160,
     perSourceMs: 30000,
     sources: [
-      { name: 'FOX Sports', url: 'https://api.foxsports.com/v2/content/optimized-rss?partnerKey=MB0Wehpmuj2lUhuRhQaafhBjAJqaPU244mlTDK1i&aggregateId=7f83e8ca-6701-5ea0-96ee-072636b67336' },
-      { name: 'NHL News', url: 'https://www.nhl.com/rss/news' },
+      { name: 'ESPN', url: 'https://www.espn.com/espn/rss/news' },
+      { name: 'NHL News', url: 'https://thehockeywriters.com/feed/' },
+      { name: 'FOX Sports', url: 'https://www.foxsports.com/feedout/syndicatedContent?categoryId=0' },
+      { name: 'CBS Sports', url: 'https://www.cbssports.com/rss/headlines/' },
+      { name: 'NHL Scores', type: 'scores', league: 'nhl' },
+      { name: 'NBA Scores', type: 'scores', league: 'nba' },
+      { name: 'MLB Scores', type: 'scores', league: 'mlb' },
+      { name: 'NFL Scores', type: 'scores', league: 'nfl' },
       { name: 'Weather', type: 'weather' }
     ]
   }

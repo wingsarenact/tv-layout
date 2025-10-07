@@ -520,6 +520,36 @@
     }
   }
 
+  async function fetchNewsJsonOrRss(name, rssUrl) {
+    const base = (window.WINGS_TV_CONFIG && window.WINGS_TV_CONFIG.dataBaseUrl) || '';
+    try {
+      const url = base ? `${base}/data/news_${name}.json?t=${Date.now()}` : `data/news_${name}.json?t=${Date.now()}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (res.ok) {
+        const arr = await res.json();
+        if (Array.isArray(arr) && arr.length) return arr;
+      }
+    } catch {}
+    // If external data host is configured, do not fall back to live RSS
+    if (base) return [];
+    const data = await fetchRss(rssUrl);
+    return (data.items || []).map(i => i.title).filter(Boolean);
+  }
+
+  async function fetchScoresJson(league) {
+    const base = (window.WINGS_TV_CONFIG && window.WINGS_TV_CONFIG.dataBaseUrl) || '';
+    if (!base) return [];
+    try {
+      const url = `${base}/data/scores_${league}.json?t=${Date.now()}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (res.ok) {
+        const arr = await res.json();
+        if (Array.isArray(arr) && arr.length) return arr;
+      }
+    } catch {}
+    return [];
+  }
+
   function animateTickerSourceLabel(nextLabel) {
     const source = $('ticker-source');
     if (!source) return;
@@ -631,9 +661,24 @@
             nextDelayMs = 1500;
             lastWasWeather = true;
           }
+        } else if (chosen.type === 'scores') {
+          const items = await fetchScoresJson(chosen.league);
+          const text = items.join('   •   ');
+          if (text && text.trim()) {
+            nextDelayMs = scrollTicker(text, chosen.name);
+            lastWasWeather = false;
+            nonWeatherShownSinceWeather = true;
+          } else {
+            nextDelayMs = 1500;
+            lastWasWeather = false;
+          }
         } else {
-          const data = await fetchRss(chosen.url);
-          const items = (data.items || []).map(i => i.title).filter(Boolean);
+          const nameKey = (chosen.name || '').toLowerCase().includes('espn') ? 'espn'
+            : (chosen.name || '').toLowerCase().includes('nhl') ? 'nhl'
+            : (chosen.name || '').toLowerCase().includes('fox') ? 'fox'
+            : (chosen.name || '').toLowerCase().includes('cbs') ? 'cbs'
+            : 'misc';
+          const items = await fetchNewsJsonOrRss(nameKey, chosen.url);
           const text = items.join('   •   ');
           if (text && text.trim()) {
             nextDelayMs = scrollTicker(text, chosen.name);

@@ -583,7 +583,7 @@
     const track = document.querySelector('.ticker-track');
     const content = $('ticker-content');
     animateTickerSourceLabel(sourceName);
-    content.textContent = text;
+    content.innerHTML = text;
     // Reset animation by forcing reflow and then transition
     const width = content.getBoundingClientRect().width;
     content.style.transform = `translateX(${track.clientWidth}px)`;
@@ -628,7 +628,7 @@
         })();
         parts.push(`${wk} ${minF}-${maxF}°F${dayCond ? ' ' + dayCond : ''}`);
       }
-      return parts.join('   •   ');
+      return parts.join('<span class="bullet">   •   </span>');
     } catch (e) {
       return '';
     }
@@ -680,7 +680,7 @@
           }
         } else if (chosen.type === 'scores') {
           const items = await fetchScoresJson(chosen.league);
-          const text = items.join('   •   ');
+          const text = items.join('<span class="bullet">   •   </span>');
           if (text && text.trim()) {
             nextDelayMs = scrollTicker(text, chosen.name);
             lastWasWeather = false;
@@ -696,7 +696,7 @@
             : (chosen.name || '').toLowerCase().includes('cbs') ? 'cbs'
             : 'misc';
           const items = await fetchNewsJsonOrRss(nameKey, chosen.url);
-          const text = items.join('   •   ');
+          const text = items.join('<span class="bullet">   •   </span>');
           if (text && text.trim()) {
             nextDelayMs = scrollTicker(text, chosen.name);
             lastWasWeather = false;

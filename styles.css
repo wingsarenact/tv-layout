@@ -43,6 +43,7 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
 .ticker-source { font-weight: 800; font-size: 32px; white-space: nowrap; }
 .ticker-track { position: relative; overflow: hidden; height: 48px; }
 .ticker-content { position: absolute; white-space: nowrap; will-change: transform; font-size: 32px; line-height: 48px; }
+.ticker-content .bullet { color: #ff4444; }
 
 /* Source switch animation */
 .ticker-source {

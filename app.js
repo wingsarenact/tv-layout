@@ -7,6 +7,16 @@
   // Diagnostics removed (no-op)
   function logDiagnostics(_) {}
 
+  // Decode common HTML entities present in some RSS titles
+  const _htmlDecoder = document.createElement('textarea');
+  function decodeHtmlEntities(text) {
+    try {
+      if (typeof text !== 'string' || !text) return text;
+      _htmlDecoder.innerHTML = text;
+      return _htmlDecoder.value;
+    } catch (_) { return text; }
+  }
+
   // Google Drive helpers
   function getDriveFolderId(idOrUrl) {
     if (!idOrUrl) return null;
@@ -319,6 +329,7 @@
     let list = [];
     const rotationMs = (config.staticAds && config.staticAds.rotationMs) || 10000;
     const img = $('static-image');
+    const placeholder = $('static-placeholder');
     const playlistCsvUrl = config.staticAds && config.staticAds.playlistCsvUrl;
     const dropboxPath = config.staticAds && config.staticAds.dropboxFolderPath;
     const dropboxShared = config.staticAds && config.staticAds.dropboxSharedLinkUrl;
@@ -356,7 +367,8 @@
         logDiagnostics(`Static images: ${urls.length}`);
       }
     }
-    if (!list.length) { img.alt = ''; return; }
+    if (!list.length) { if (placeholder) placeholder.classList.remove('hidden'); img.alt = ''; return; }
+    if (placeholder) placeholder.classList.add('hidden');
     let idx = 0;
     const show = () => {
       const next = list[idx % list.length];
@@ -374,6 +386,7 @@
     let items = [];
     const videoA = $('video-player');
     const videoB = $('video-player-buffer');
+    const placeholder = $('video-placeholder');
     const playlistCsvUrl = config.videoAds && config.videoAds.playlistCsvUrl;
     const dropboxPath = config.videoAds && config.videoAds.dropboxFolderPath;
     const dropboxShared = config.videoAds && config.videoAds.dropboxSharedLinkUrl;
@@ -411,7 +424,8 @@
         logDiagnostics(`Videos: ${urls.length}`);
       }
     }
-    if (!items.length) { logDiagnostics('No video ads'); return; }
+    if (!items.length) { if (placeholder) placeholder.classList.remove('hidden'); logDiagnostics('No video ads'); return; }
+    if (placeholder) placeholder.classList.add('hidden');
 
     let idx = 0;
     let showingA = true;
@@ -527,13 +541,16 @@
       const res = await fetch(url, { cache: 'no-store' });
       if (res.ok) {
         const arr = await res.json();
-        if (Array.isArray(arr) && arr.length) return arr;
+        if (Array.isArray(arr) && arr.length) return arr.map(decodeHtmlEntities);
       }
     } catch {}
     // If external data host is configured, do not fall back to live RSS
     if (base) return [];
     const data = await fetchRss(rssUrl);
-    return (data.items || []).map(i => i.title).filter(Boolean);
+    return (data.items || [])
+      .map(i => i.title)
+      .filter(Boolean)
+      .map(decodeHtmlEntities);
   }
 
   async function fetchScoresJson(league) {

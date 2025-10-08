@@ -25,11 +25,14 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
 
 /* Middle Zone */
 .middle-zone { width: 1920px; height: 720px; display: grid; grid-template-columns: 640px 1280px; }
-.static-ads { width: 640px; height: 720px; background: #101828; display: flex; align-items: center; justify-content: center; }
+.static-ads { width: 640px; height: 720px; background: #101828; display: flex; align-items: center; justify-content: center; position: relative; }
 #static-image { max-width: 100%; max-height: 100%; object-fit: contain; }
-.static-ads::before { content: 'Static Placeholder\A640x720'; white-space: pre; color: rgba(255,255,255,0.6); text-align: center; font-weight: 600; font-size: 24px; }
 .dynamic-ads { width: 1280px; height: 720px; background: #0a0f1f; display: flex; align-items: center; justify-content: center; position: relative; }
-#video-player:empty::before { content: 'Video Placeholder\\A1280x720'; white-space: pre; color: rgba(255,255,255,0.6); text-align: center; font-weight: 600; font-size: 24px; }
+.placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; pointer-events: none; }
+.static-ads .placeholder { z-index: 2; }
+.dynamic-ads .placeholder { z-index: 2; }
+.placeholder .title { font-size: 28px; font-weight: 800; color: rgba(255,255,255,0.85); letter-spacing: 0.4px; }
+.placeholder .subtitle { font-size: 20px; font-weight: 600; color: rgba(255,255,255,0.6); }
 #video-player, #video-player-buffer { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; transition: opacity 250ms ease; }
 #video-player { opacity: 1; }
 #video-player-buffer { opacity: 0; }

@@ -366,6 +366,10 @@
         list = urls;
         logDiagnostics(`Static images: ${urls.length}`);
       }
+    } else if (config.staticAds && config.staticAds.items && config.staticAds.items.length) {
+      // Use local items from config
+      list = config.staticAds.items;
+      logDiagnostics(`Static images: ${list.length}`);
     }
     if (!list.length) { if (placeholder) placeholder.classList.remove('hidden'); img.alt = ''; return; }
     if (placeholder) placeholder.classList.add('hidden');

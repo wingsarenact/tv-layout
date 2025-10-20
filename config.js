@@ -22,13 +22,8 @@ window.WINGS_TV_CONFIG = {
     playlistCsvUrl: '',
     // Use this Drive folder to auto-list images (anyone-with-link must be viewer):
     driveFolderUrl: '',
-    items: [
-      'assets/static/ad01.png',
-      'assets/static/ad02.png',
-      'assets/static/ad03.png',
-      'assets/static/ad04.png',
-      'assets/static/ad05.png'
-    ]
+    // Auto-detects images in assets/static/ folder (ad01.png, ad02.png, etc.)
+    items: []
   },
 
   // Video playlist (MP4/H.264 recommended). Drive disabled when Dropbox is configured.

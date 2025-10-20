@@ -26,7 +26,9 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
 /* Middle Zone */
 .middle-zone { width: 1920px; height: 720px; display: grid; grid-template-columns: 640px 1280px; }
 .static-ads { width: 640px; height: 720px; background: #101828; display: flex; align-items: center; justify-content: center; position: relative; }
-#static-image { width: 100%; height: 100%; object-fit: cover; transition: opacity 1s ease-in-out; }
+#static-image, #static-image-buffer { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity 1s ease-in-out; }
+#static-image { opacity: 1; }
+#static-image-buffer { opacity: 0; }
 .dynamic-ads { width: 1280px; height: 720px; background: #0a0f1f; display: flex; align-items: center; justify-content: center; position: relative; }
 .placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; pointer-events: none; }
 .static-ads .placeholder { z-index: 2; }

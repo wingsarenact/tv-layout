@@ -327,13 +327,15 @@
   // Static Ads
   async function initStaticAds() {
     let list = [];
-    const rotationMs = (config.staticAds && config.staticAds.rotationMs) || 10000;
+    const rotationMs = (config.staticAds && config.staticAds.rotationMs) || 15000;
     const img = $('static-image');
+    const imgBuffer = $('static-image-buffer');
     const placeholder = $('static-placeholder');
     const playlistCsvUrl = config.staticAds && config.staticAds.playlistCsvUrl;
     const dropboxPath = config.staticAds && config.staticAds.dropboxFolderPath;
     const dropboxShared = config.staticAds && config.staticAds.dropboxSharedLinkUrl;
     const driveFolderUrl = null; // disable Drive when Dropbox is configured
+    
     if (playlistCsvUrl) {
       const lines = await fetchCsvLines(playlistCsvUrl);
       const body = lines.slice(1);
@@ -366,23 +368,104 @@
         list = urls;
         logDiagnostics(`Static images: ${urls.length}`);
       }
-    } else if (config.staticAds && config.staticAds.items && config.staticAds.items.length) {
-      // Use local items from config
-      list = config.staticAds.items;
-      logDiagnostics(`Static images: ${list.length}`);
+    } else {
+      // Auto-detect local static images
+      const localImages = await detectLocalStaticImages();
+      if (localImages.length) {
+        list = localImages;
+        logDiagnostics(`Static images: ${list.length}`);
+      }
     }
-    if (!list.length) { if (placeholder) placeholder.classList.remove('hidden'); img.alt = ''; return; }
+    
+    if (!list.length) { 
+      if (placeholder) placeholder.classList.remove('hidden'); 
+      img.alt = ''; 
+      if (imgBuffer) imgBuffer.alt = '';
+      return; 
+    }
+    
     if (placeholder) placeholder.classList.add('hidden');
+    
     let idx = 0;
+    let isTransitioning = false;
+    
     const show = () => {
+      if (isTransitioning) return;
       const next = list[idx % list.length];
-      img.onerror = () => { logDiagnostics('Static image load failed'); };
-      img.onload = () => { logDiagnostics(''); };
-      img.src = next;
+      
+      // Load next image in buffer
+      imgBuffer.onload = () => {
+        // Start fade transition
+        isTransitioning = true;
+        imgBuffer.style.opacity = '1';
+        img.style.opacity = '0';
+        
+        // After transition completes, swap the images
+        setTimeout(() => {
+          img.src = imgBuffer.src;
+          img.style.opacity = '1';
+          imgBuffer.style.opacity = '0';
+          isTransitioning = false;
+        }, 1000); // Match CSS transition duration
+      };
+      
+      imgBuffer.onerror = () => { 
+        logDiagnostics('Static image load failed'); 
+        isTransitioning = false;
+      };
+      
+      imgBuffer.src = next;
       idx += 1;
     };
-    show();
+    
+    // Show first image immediately
+    img.onload = () => { logDiagnostics(''); };
+    img.src = list[0];
+    idx = 1;
+    
     setInterval(show, rotationMs);
+  }
+
+  // Auto-detect local static images
+  async function detectLocalStaticImages() {
+    const images = [];
+    const basePath = 'assets/static/';
+    
+    // Try to detect images by checking if they exist
+    // We'll check for common naming patterns: ad01.png, ad02.png, etc. (up to ad50)
+    for (let i = 1; i <= 50; i++) {
+      const paddedNum = i.toString().padStart(2, '0');
+      const imagePath = `${basePath}ad${paddedNum}.png`;
+      
+      try {
+        const response = await fetch(imagePath, { method: 'HEAD' });
+        if (response.ok) {
+          images.push(imagePath);
+        }
+      } catch (e) {
+        // Image doesn't exist, continue checking
+      }
+    }
+    
+    // Also check for other common formats
+    const extensions = ['jpg', 'jpeg', 'gif', 'webp'];
+    for (let i = 1; i <= 50; i++) {
+      const paddedNum = i.toString().padStart(2, '0');
+      for (const ext of extensions) {
+        const imagePath = `${basePath}ad${paddedNum}.${ext}`;
+        try {
+          const response = await fetch(imagePath, { method: 'HEAD' });
+          if (response.ok) {
+            images.push(imagePath);
+            break; // Found this number, move to next
+          }
+        } catch (e) {
+          // Image doesn't exist, continue checking
+        }
+      }
+    }
+    
+    return images.sort(); // Sort to ensure proper order
   }
 
   // Video Ads

@@ -390,39 +390,77 @@
     let isTransitioning = false;
     let currentImg = img; // Track which image is currently visible
     let bufferImg = imgBuffer;
+    const preloadedImages = new Map(); // Cache for preloaded images
+    
+    // Preload next few images for faster transitions
+    const preloadNextImages = () => {
+      for (let i = 1; i <= 3; i++) { // Preload next 3 images
+        const nextIdx = (idx + i) % list.length;
+        const nextSrc = list[nextIdx];
+        if (!preloadedImages.has(nextSrc)) {
+          const preloadImg = new Image();
+          preloadImg.src = nextSrc;
+          preloadedImages.set(nextSrc, preloadImg);
+        }
+      }
+    };
     
     const show = () => {
       if (isTransitioning) return;
       const next = list[idx % list.length];
       
-      // Load next image in buffer
-      bufferImg.onload = () => {
-        // Start fade transition
+      // Check if image is already preloaded
+      const preloadedImg = preloadedImages.get(next);
+      
+      if (preloadedImg && preloadedImg.complete) {
+        // Image is already loaded, start transition immediately
+        bufferImg.src = next;
         isTransitioning = true;
         bufferImg.style.opacity = '1';
         currentImg.style.opacity = '0';
         
-        // After transition completes, swap which image is current/buffer
         setTimeout(() => {
-          // Swap the roles
           const temp = currentImg;
           currentImg = bufferImg;
           bufferImg = temp;
           isTransitioning = false;
-        }, 1000); // Match CSS transition duration
-      };
+          preloadNextImages(); // Preload next batch
+        }, 1000);
+      } else {
+        // Load next image in buffer
+        bufferImg.onload = () => {
+          // Start fade transition
+          isTransitioning = true;
+          bufferImg.style.opacity = '1';
+          currentImg.style.opacity = '0';
+          
+          // After transition completes, swap which image is current/buffer
+          setTimeout(() => {
+            // Swap the roles
+            const temp = currentImg;
+            currentImg = bufferImg;
+            bufferImg = temp;
+            isTransitioning = false;
+            preloadNextImages(); // Preload next batch
+          }, 1000); // Match CSS transition duration
+        };
+        
+        bufferImg.onerror = () => { 
+          logDiagnostics('Static image load failed'); 
+          isTransitioning = false;
+        };
+        
+        bufferImg.src = next;
+      }
       
-      bufferImg.onerror = () => { 
-        logDiagnostics('Static image load failed'); 
-        isTransitioning = false;
-      };
-      
-      bufferImg.src = next;
       idx += 1;
     };
     
-    // Show first image immediately
-    img.onload = () => { logDiagnostics(''); };
+    // Show first image immediately and start preloading
+    img.onload = () => { 
+      logDiagnostics(''); 
+      preloadNextImages(); // Start preloading after first image loads
+    };
     img.src = list[0];
     idx = 1;
     

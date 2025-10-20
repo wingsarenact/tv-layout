@@ -388,33 +388,36 @@
     
     let idx = 0;
     let isTransitioning = false;
+    let currentImg = img; // Track which image is currently visible
+    let bufferImg = imgBuffer;
     
     const show = () => {
       if (isTransitioning) return;
       const next = list[idx % list.length];
       
       // Load next image in buffer
-      imgBuffer.onload = () => {
+      bufferImg.onload = () => {
         // Start fade transition
         isTransitioning = true;
-        imgBuffer.style.opacity = '1';
-        img.style.opacity = '0';
+        bufferImg.style.opacity = '1';
+        currentImg.style.opacity = '0';
         
-        // After transition completes, swap the images
+        // After transition completes, swap which image is current/buffer
         setTimeout(() => {
-          img.src = imgBuffer.src;
-          img.style.opacity = '1';
-          imgBuffer.style.opacity = '0';
+          // Swap the roles
+          const temp = currentImg;
+          currentImg = bufferImg;
+          bufferImg = temp;
           isTransitioning = false;
         }, 1000); // Match CSS transition duration
       };
       
-      imgBuffer.onerror = () => { 
+      bufferImg.onerror = () => { 
         logDiagnostics('Static image load failed'); 
         isTransitioning = false;
       };
       
-      imgBuffer.src = next;
+      bufferImg.src = next;
       idx += 1;
     };
     

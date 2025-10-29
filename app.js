@@ -369,24 +369,62 @@
         logDiagnostics(`Static images: ${urls.length}`);
       }
     } else {
-      // Auto-detect local static images
+      // Auto-detect local static images, but start loading first image immediately
+      const firstImagePath = 'assets/static/ad01.png';
+      
+      // Try to load first image immediately (don't wait for full detection)
+      const firstImgTest = new Image();
+      let firstImageStarted = false;
+      
+      firstImgTest.onload = () => {
+        // First image exists! Start showing it right away
+        if (placeholder) placeholder.classList.add('hidden');
+        firstImageStarted = true;
+        img.src = firstImagePath;
+      };
+      firstImgTest.onerror = () => {
+        // First image doesn't exist, will check after detection
+      };
+      firstImgTest.src = firstImagePath;
+      
+      // Continue with full detection in the background
       const localImages = await detectLocalStaticImages();
       if (localImages.length) {
         list = localImages;
         logDiagnostics(`Static images: ${list.length}`);
+        
+        // If first image wasn't already loading, start it now
+        if (!firstImageStarted && list[0]) {
+          if (placeholder) placeholder.classList.add('hidden');
+          img.src = list[0];
+        }
+      } else if (!firstImageStarted) {
+        // No images found and first didn't load
+        if (placeholder) placeholder.classList.remove('hidden'); 
+        img.alt = ''; 
+        if (imgBuffer) imgBuffer.alt = '';
+        return;
       }
     }
     
     if (!list.length) { 
-      if (placeholder) placeholder.classList.remove('hidden'); 
-      img.alt = ''; 
-      if (imgBuffer) imgBuffer.alt = '';
+      // Only show placeholder if no images were detected and none loaded
+      if (placeholder && !img.src.includes('ad')) {
+        placeholder.classList.remove('hidden'); 
+        img.alt = ''; 
+        if (imgBuffer) imgBuffer.alt = '';
+      }
       return; 
     }
     
     if (placeholder) placeholder.classList.add('hidden');
     
+    // Determine starting index - if first image already loaded, start at index 1
     let idx = 0;
+    if (list.length > 0 && (img.src === list[0] || img.src.includes('ad01'))) {
+      idx = 1;
+    }
+    
     let isTransitioning = false;
     let currentImg = img; // Track which image is currently visible
     let bufferImg = imgBuffer;
@@ -397,7 +435,7 @@
       for (let i = 1; i <= 3; i++) { // Preload next 3 images
         const nextIdx = (idx + i) % list.length;
         const nextSrc = list[nextIdx];
-        if (!preloadedImages.has(nextSrc)) {
+        if (nextSrc && !preloadedImages.has(nextSrc)) {
           const preloadImg = new Image();
           preloadImg.src = nextSrc;
           preloadedImages.set(nextSrc, preloadImg);
@@ -406,7 +444,7 @@
     };
     
     const show = () => {
-      if (isTransitioning) return;
+      if (isTransitioning || !list.length) return;
       const next = list[idx % list.length];
       
       // Check if image is already preloaded
@@ -456,15 +494,18 @@
       idx += 1;
     };
     
-    // Show first image immediately and start preloading
+    // Set up interval and start preloading
     img.onload = () => { 
       logDiagnostics(''); 
-      preloadNextImages(); // Start preloading after first image loads
+      if (list.length > 0) {
+        preloadNextImages(); // Start preloading after first image loads
+      }
     };
-    img.src = list[0];
-    idx = 1;
     
-    setInterval(show, rotationMs);
+    // Set up interval for rotation
+    if (list.length > 0) {
+      setInterval(show, rotationMs);
+    }
   }
 
   // Auto-detect local static images

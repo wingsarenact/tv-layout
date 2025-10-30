@@ -5,8 +5,8 @@ window.WINGS_TV_CONFIG = {
   autoScale: true,
   // Location for weather (Newark, DE as example - update as needed)
   location: {
-    latitude: 39.6837,
-    longitude: -75.7497,
+    latitude: 41.0534,
+    longitude: -73.5387,
     timezone: 'America/New_York'
   },
   locationName: 'Stamford, CT',

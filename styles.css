@@ -4,15 +4,21 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
 .app { width: 1920px; height: 1080px; overflow: hidden; position: relative; background: linear-gradient(180deg, #0b0f1a 0%, #0e1524 100%); transform-origin: top left; }
 
 /* Top Zone */
-.top-zone { width: 1920px; height: 180px; display: grid; grid-template-columns: 860px 200px 860px; align-items: center; gap: 0; background: rgba(255,255,255,0.04); backdrop-filter: blur(6px); border-bottom: 1px solid rgba(255,255,255,0.08); }
-.top-zone .datetime { padding-left: 30px; }
-.top-zone .weather { padding-right: 30px; width: 100%; max-width: 860px; justify-content: flex-end; }
-.top-zone .datetime { justify-self: start; display: flex; flex-direction: column; align-items: flex-start; row-gap: 6px; font-size: 36px; font-weight: 600; letter-spacing: 0.5px; opacity: 0.95; }
+.top-zone { width: 1920px; height: 180px; display: grid; grid-template-columns: 860px 200px 860px; align-items: center; gap: 0; background: rgba(255,255,255,0.04); backdrop-filter: blur(6px); border-bottom: 1px solid rgba(255,255,255,0.08); position: relative; }
+.festive-overlay { position: absolute; left: 0; width: 100%; pointer-events: none; z-index: 1; display: none; }
+.top-zone .festive-overlay { top: 0; height: auto; }
+.bottom-zone .festive-overlay { bottom: 0; height: auto; }
+.festive-overlay.christmas { display: block; }
+.top-zone .festive-overlay.christmas::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100px; background-image: url('assets/festive/christmas_top.png'); background-repeat: repeat-x; background-size: auto 100px; background-position: top left; filter: drop-shadow(0 0 4px rgba(255, 0, 0, 0.15)) drop-shadow(0 0 6px rgba(255, 215, 0, 0.1)) drop-shadow(0 0 3px rgba(255, 255, 255, 0.08)); animation: christmasGlow 3s ease-in-out infinite; }
+.bottom-zone .festive-overlay.christmas::before { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 100px; background-image: url('assets/festive/christmas_bottom.png'); background-repeat: repeat-x; background-size: auto 100px; background-position: bottom left; filter: drop-shadow(0 0 4px rgba(255, 0, 0, 0.15)) drop-shadow(0 0 6px rgba(255, 215, 0, 0.1)) drop-shadow(0 0 3px rgba(255, 255, 255, 0.08)); animation: christmasGlow 3s ease-in-out infinite; }
+.top-zone .datetime { padding-left: 30px; position: relative; z-index: 2; justify-self: start; display: flex; flex-direction: column; align-items: flex-start; row-gap: 6px; font-size: 36px; font-weight: 600; letter-spacing: 0.5px; opacity: 0.95; }
 #date-text { text-align: left; }
 #time-text { text-align: left; min-width: 0; }
-.top-zone .logo { justify-self: center; display: flex; align-items: center; justify-content: center; }
+.top-zone .logo { justify-self: center; display: flex; align-items: center; justify-content: center; position: relative; z-index: 2; }
 .top-zone #logo-img { width: 200px; height: 200px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5)); }
-.top-zone .weather { justify-self: end; display: flex; flex-direction: row; align-items: center; gap: 20px; }
+.santa-hat-overlay { position: absolute; top: -60px; left: 50%; transform: translateX(-50%); width: 120px; height: 80px; background-image: url('assets/festive/santa_hat.png'); background-size: contain; background-repeat: no-repeat; background-position: center top; display: none; pointer-events: none; z-index: 3; }
+.santa-hat-overlay.christmas { display: block; }
+.top-zone .weather { padding-right: 30px; width: 100%; max-width: 860px; justify-content: flex-end; position: relative; z-index: 2; justify-self: end; display: flex; flex-direction: row; align-items: center; gap: 20px; }
 .weather-left { display: flex; align-items: center; gap: 6px; }
 #weather-icon { width: 64px; height: 64px; display: block; }
 .weather-temp { font-size: 40px; font-weight: 800; line-height: 1; }
@@ -40,8 +46,8 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
 #video-player-buffer { opacity: 0; }
 
 /* Bottom Zone */
-.bottom-zone { width: 1920px; height: 180px; background: rgba(255,255,255,0.05); border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; }
-.ticker { width: 100%; display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; padding: 0 24px; }
+.bottom-zone { width: 1920px; height: 180px; background: rgba(255,255,255,0.05); border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; position: relative; }
+.ticker { width: 100%; display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; padding: 0 24px; position: relative; z-index: 2; }
 .ticker-source { font-weight: 800; font-size: 32px; white-space: nowrap; }
 .ticker-track { position: relative; overflow: hidden; height: 48px; }
 .ticker-content { position: absolute; white-space: nowrap; will-change: transform; font-size: 32px; line-height: 48px; }
@@ -66,6 +72,17 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
 /* Safe area for tv overscan */
 @media (display-mode: fullscreen) {
   .app { padding: 0; }
+}
+
+/* Festive Animations */
+
+@keyframes christmasGlow {
+  0%, 100% { 
+    filter: drop-shadow(0 0 4px rgba(255, 0, 0, 0.15)) drop-shadow(0 0 6px rgba(255, 215, 0, 0.1)) drop-shadow(0 0 3px rgba(255, 255, 255, 0.08));
+  }
+  50% { 
+    filter: drop-shadow(0 0 6px rgba(255, 0, 0, 0.2)) drop-shadow(0 0 8px rgba(255, 215, 0, 0.15)) drop-shadow(0 0 4px rgba(255, 255, 255, 0.12));
+  }
 }
 
 

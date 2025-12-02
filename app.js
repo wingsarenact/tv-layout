@@ -901,7 +901,64 @@
 
   function initLogo() {
     const img = $('logo-img');
-    if (config.logoSrc) img.src = config.logoSrc;
+    if (!img) return;
+    updateLogoForHoliday();
+  }
+
+  function updateLogoForHoliday() {
+    const img = $('logo-img');
+    if (!img) return;
+    
+    // Check if it's Christmas time
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+    const isChristmas = month === 12 && day >= 1 && day <= 28;
+    
+    if (isChristmas && config.logoChristmasSrc) {
+      img.src = config.logoChristmasSrc;
+    } else if (config.logoSrc) {
+      img.src = config.logoSrc;
+    }
+  }
+
+  function initFestiveDecorations() {
+    const overlayTop = $('festive-overlay');
+    const overlayBottom = $('festive-overlay-bottom');
+    const santaHat = $('santa-hat-overlay');
+    if (!overlayTop || !overlayBottom) return;
+    
+    // PREVIEW MODE: Set to true to preview Christmas decorations
+    const PREVIEW_MODE = false;
+    
+    if (PREVIEW_MODE) {
+      // Show Christmas decorations for preview
+      overlayTop.classList.add('christmas');
+      overlayBottom.classList.add('christmas');
+      if (santaHat) santaHat.classList.add('christmas');
+      updateLogoForHoliday();
+      return;
+    }
+    
+    const now = new Date();
+    const month = now.getMonth() + 1; // 1-12 (January = 1, December = 12)
+    const day = now.getDate();
+    
+    // Remove Christmas classes first
+    overlayTop.classList.remove('christmas');
+    overlayBottom.classList.remove('christmas');
+    if (santaHat) santaHat.classList.remove('christmas');
+    
+    // Christmas: Dec 1 - Dec 28
+    if (month === 12 && day >= 1 && day <= 28) {
+      overlayTop.classList.add('christmas');
+      overlayBottom.classList.add('christmas');
+      if (santaHat) santaHat.classList.add('christmas');
+      updateLogoForHoliday();
+    } else {
+      // Not Christmas - use default logo
+      updateLogoForHoliday();
+    }
   }
 
   // Init all
@@ -912,6 +969,7 @@
     updateClock();
     setInterval(updateClock, 1000);
     initWeather();
+    initFestiveDecorations();
     (async () => { await initStaticAds(); await initVideoAds(); })();
     initTicker();
   });

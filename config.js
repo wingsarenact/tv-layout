@@ -13,6 +13,7 @@ window.WINGS_TV_CONFIG = {
 
   // Logo asset path
   logoSrc: 'assets/logo.png',
+  logoChristmasSrc: 'assets/festive/logo_christmas.png',
 
 
   // Static images playlist (can be absolute URLs). Drive disabled when Dropbox is configured.

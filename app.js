@@ -245,12 +245,81 @@
     }
   };
 
+  // Temperature to color mapping (-20°F to 120°F)
+  function getTemperatureColor(tempF) {
+    // Clamp temperature to the range
+    const clamped = Math.max(-20, Math.min(120, tempF));
+    
+    // Color stops every 10 degrees from -20 to 120
+    // -20: Deep blue (very cold)
+    // 0: Blue (freezing)
+    // 20: Light blue/cyan (cold)
+    // 40: Cyan/teal (cool)
+    // 60: Green (mild)
+    // 80: Yellow (warm)
+    // 100: Orange (hot)
+    // 120: Red (very hot)
+    
+    if (clamped <= -20) return '#1e3a8a'; // Deep blue
+    if (clamped <= -10) return '#2563eb'; // Blue
+    if (clamped <= 0) return '#3b82f6'; // Light blue
+    if (clamped <= 10) return '#60a5fa'; // Lighter blue
+    if (clamped <= 20) return '#7dd3fc'; // Cyan-blue
+    if (clamped <= 30) return '#06b6d4'; // Cyan
+    if (clamped <= 40) return '#14b8a6'; // Teal
+    if (clamped <= 50) return '#10b981'; // Green-teal
+    if (clamped <= 60) return '#22c55e'; // Green
+    if (clamped <= 70) return '#84cc16'; // Yellow-green
+    if (clamped <= 80) return '#eab308'; // Yellow
+    if (clamped <= 90) return '#f59e0b'; // Orange-yellow
+    if (clamped <= 100) return '#f97316'; // Orange
+    if (clamped <= 110) return '#ef4444'; // Red-orange
+    return '#dc2626'; // Red
+  }
+
+  function generateTemperatureGradient(minF, maxF) {
+    // Generate color stops for the gradient based on the temperature range
+    // Map the range to the full -20 to 120 scale
+    const fullMin = -20;
+    const fullMax = 120;
+    const fullRange = fullMax - fullMin;
+    
+    // Calculate the position of min and max on the full scale (0-100%)
+    const minPercent = ((minF - fullMin) / fullRange) * 100;
+    const maxPercent = ((maxF - fullMin) / fullRange) * 100;
+    
+    // Generate color stops every 10 degrees within the visible range
+    const stops = [];
+    const startTemp = Math.floor(minF / 10) * 10; // Round down to nearest 10
+    const endTemp = Math.ceil(maxF / 10) * 10; // Round up to nearest 10
+    
+    // Add start color
+    const startColor = getTemperatureColor(minF);
+    stops.push(`${startColor} 0%`);
+    
+    // Add intermediate stops every 10 degrees
+    for (let temp = startTemp; temp <= endTemp; temp += 10) {
+      if (temp > minF && temp < maxF) {
+        const percent = ((temp - minF) / (maxF - minF)) * 100;
+        const color = getTemperatureColor(temp);
+        stops.push(`${color} ${percent}%`);
+      }
+    }
+    
+    // Add end color
+    const endColor = getTemperatureColor(maxF);
+    stops.push(`${endColor} 100%`);
+    
+    return `linear-gradient(90deg, ${stops.join(', ')})`;
+  }
+
   async function fetchWeather() {
     const { latitude, longitude, timezone } = config.location || {};
     const url = new URL('https://api.open-meteo.com/v1/forecast');
     url.searchParams.set('latitude', latitude);
     url.searchParams.set('longitude', longitude);
     url.searchParams.set('current_weather', 'true');
+    url.searchParams.set('hourly', 'apparent_temperature');
     url.searchParams.set('daily', 'temperature_2m_max,temperature_2m_min,weathercode');
     url.searchParams.set('timezone', timezone || 'America/New_York');
 
@@ -264,6 +333,7 @@
     try {
       const current = data.current_weather;
       const daily = data.daily;
+      const hourly = data.hourly;
       const isDay = current.is_day === 1;
       const currentTempF = Math.round((current.temperature * 9) / 5 + 32);
       const minC = daily.temperature_2m_min[0];
@@ -271,12 +341,46 @@
       const minF = Math.round((minC * 9) / 5 + 32);
       const maxF = Math.round((maxC * 9) / 5 + 32);
 
+      // Get apparent temperature (feels like) from hourly data
+      let feelsLikeF = null;
+      if (hourly && hourly.apparent_temperature && hourly.time && hourly.apparent_temperature.length > 0) {
+        // Find the current hour's apparent temperature
+        // Open Meteo returns times in ISO format, try to match current time
+        const currentTime = current.time;
+        let timeIndex = hourly.time.findIndex(t => t === currentTime);
+        
+        // If exact match not found, use the first hour (index 0) which is typically current
+        if (timeIndex === -1) {
+          timeIndex = 0;
+        }
+        
+        if (timeIndex !== -1 && hourly.apparent_temperature[timeIndex] !== null && hourly.apparent_temperature[timeIndex] !== undefined) {
+          const feelsLikeC = hourly.apparent_temperature[timeIndex];
+          feelsLikeF = Math.round((feelsLikeC * 9) / 5 + 32);
+        }
+      }
+
       const iconUrl = weatherIconMap(current.weathercode, isDay);
       renderWeatherIcon(iconUrl);
       $('weather-temp').textContent = `${currentTempF}°F`;
       $('weather-min').textContent = `${minF}°`; // 80% opacity via CSS
       $('weather-max').textContent = `${maxF}°`;
 
+      // Display feels like temperature if available
+      const feelsLikeEl = $('weather-feels-like');
+      if (feelsLikeEl) {
+        if (feelsLikeF !== null) {
+          feelsLikeEl.textContent = `Feels Like: ${feelsLikeF}°F`;
+          feelsLikeEl.style.display = 'block';
+        } else {
+          feelsLikeEl.style.display = 'none';
+        }
+      }
+
+      // Generate and apply temperature-based gradient
+      const gradient = generateTemperatureGradient(minF, maxF);
+      $('weather-fill').style.background = gradient;
+      
       // Position fill and current circle
       const range = maxF - minF;
       const pct = range > 0 ? ((currentTempF - minF) / range) * 100 : 0;

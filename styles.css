@@ -22,12 +22,14 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
 .weather-left { display: flex; align-items: center; gap: 6px; }
 #weather-icon { width: 64px; height: 64px; display: block; }
 .weather-temp { font-size: 40px; font-weight: 800; line-height: 1; }
-.weather-range { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; width: 380px; }
+.weather-range { position: relative; width: 380px; }
+.weather-range-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; }
 .weather-range .min { color: rgba(255,255,255,0.8); font-weight: 600; font-size: 32px; }
 .weather-range .max { color: rgba(255,255,255,1); font-weight: 800; font-size: 32px; }
 .range-bar { position: relative; height: 10px; background: rgba(255,255,255,0.18); border-radius: 999px; overflow: hidden; }
-.range-fill { position: absolute; height: 100%; left: 0; top: 0; background: linear-gradient(90deg, #5bc0eb 0%, #f78154 100%); width: 0%; }
+.range-fill { position: absolute; height: 100%; left: 0; top: 0; width: 0%; }
 .range-current { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px rgba(255,255,255,0.3); left: 0%; }
+.weather-range .feels-like { position: absolute; top: 100%; left: 0; right: 0; text-align: center; color: rgba(255,255,255,0.75); font-weight: 600; font-size: 24px; margin-top: 8px; }
 
 /* Middle Zone */
 .middle-zone { width: 1920px; height: 720px; display: grid; grid-template-columns: 640px 1280px; }

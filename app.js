@@ -344,17 +344,25 @@
       // Get apparent temperature (feels like) from hourly data
       let feelsLikeF = null;
       if (hourly && hourly.apparent_temperature && hourly.time && hourly.apparent_temperature.length > 0) {
-        // Find the current hour's apparent temperature
-        // Open Meteo returns times in ISO format, try to match current time
-        const currentTime = current.time;
-        let timeIndex = hourly.time.findIndex(t => t === currentTime);
+        // Open Meteo hourly data starts at midnight (00:00) of the current day
+        // Calculate which hour index corresponds to the current time
+        const currentTime = new Date(current.time);
+        const currentHour = currentTime.getHours(); // 0-23
         
-        // If exact match not found, use the first hour (index 0) which is typically current
-        if (timeIndex === -1) {
-          timeIndex = 0;
+        // The hourly data index equals the hour of the day (0 = midnight, 14 = 2 PM, etc.)
+        let timeIndex = currentHour;
+        
+        // Ensure we don't go out of bounds
+        if (timeIndex >= hourly.time.length) {
+          timeIndex = hourly.time.length - 1;
         }
         
-        if (timeIndex !== -1 && hourly.apparent_temperature[timeIndex] !== null && hourly.apparent_temperature[timeIndex] !== undefined) {
+        // If the data at this index is null, try the previous hour
+        if ((hourly.apparent_temperature[timeIndex] === null || hourly.apparent_temperature[timeIndex] === undefined) && timeIndex > 0) {
+          timeIndex = timeIndex - 1;
+        }
+        
+        if (hourly.apparent_temperature[timeIndex] !== null && hourly.apparent_temperature[timeIndex] !== undefined) {
           const feelsLikeC = hourly.apparent_temperature[timeIndex];
           feelsLikeF = Math.round((feelsLikeC * 9) / 5 + 32);
         }

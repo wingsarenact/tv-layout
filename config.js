@@ -44,14 +44,15 @@ window.WINGS_TV_CONFIG = {
     perSourceMs: 30000,
     sources: [
       { name: 'ESPN', url: 'https://www.espn.com/espn/rss/news' },
+      { name: 'Weather', type: 'weather' },  // Weather appears early in rotation
       { name: 'NHL News', url: 'https://thehockeywriters.com/feed/' },
       { name: 'FOX Sports', url: 'https://www.foxsports.com/feedout/syndicatedContent?categoryId=0' },
-      { name: 'CBS Sports', url: 'https://www.cbssports.com/rss/headlines/' },
       { name: 'NHL Scores', type: 'scores', league: 'nhl' },
+      { name: 'Weather', type: 'weather' },  // Weather appears again mid-rotation
       { name: 'NBA Scores', type: 'scores', league: 'nba' },
+      { name: 'CBS Sports', url: 'https://www.cbssports.com/rss/headlines/' },
       { name: 'MLB Scores', type: 'scores', league: 'mlb' },
-      { name: 'NFL Scores', type: 'scores', league: 'nfl' },
-      { name: 'Weather', type: 'weather' }
+      { name: 'NFL Scores', type: 'scores', league: 'nfl' }
     ]
   }
 };

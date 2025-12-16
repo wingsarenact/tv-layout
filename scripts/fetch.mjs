@@ -2,6 +2,14 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { XMLParser } from 'fast-xml-parser';
 // Using native fetch (Node 18+) - node-fetch causes hanging connections
 
+// Optional Cheerio import for HTML fallback (may not be installed)
+let cheerio;
+try {
+  cheerio = await import('cheerio');
+} catch {
+  cheerio = null;
+}
+
 mkdirSync('data', { recursive: true });
 
 // Timeout wrapper to prevent hanging on unresponsive APIs
@@ -51,86 +59,113 @@ for (const f of FEEDS) {
   }
 }
 
-// Scores (today)
+// Scores (today) - Using unified ESPN API for all sports
 const tz = 'America/New_York';
 const today = new Date().toLocaleDateString('en-CA', { timeZone: tz }); // YYYY-MM-DD
 
-// Helper to get yesterday's date
-function getYesterday(dateStr) {
-  const d = new Date(dateStr + 'T12:00:00');
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
-}
-// Helper to get tomorrow's date
-function getTomorrow(dateStr) {
-  const d = new Date(dateStr + 'T12:00:00');
-  d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
+// ESPN API endpoints (reliable, same format for all sports)
+const ESPN_ENDPOINTS = {
+  nfl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+  nba: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+  nhl: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
+  mlb: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard'
+};
+
+// ESPN HTML scoreboard URLs for fallback scraping
+const ESPN_HTML_URLS = {
+  nfl: 'https://www.espn.com/nfl/scoreboard',
+  nba: 'https://www.espn.com/nba/scoreboard',
+  nhl: 'https://www.espn.com/nhl/scoreboard',
+  mlb: 'https://www.espn.com/mlb/scoreboard'
+};
+
+/**
+ * Parse ESPN API response into score strings
+ */
+function parseESPNScores(js) {
+  const events = js.events || [];
+  return events.map(ev => {
+    const c = ev.competitions?.[0];
+    if (!c) return null;
+    const away = c.competitors.find(t => t.homeAway === 'away');
+    const home = c.competitors.find(t => t.homeAway === 'home');
+    if (!away || !home) return null;
+    const status = c.status?.type?.shortDetail || '';
+    return `${away.team.abbreviation} ${away.score} @ ${home.team.abbreviation} ${home.score} ${status}`;
+  }).filter(Boolean);
 }
 
+/**
+ * Fallback: Scrape ESPN HTML scoreboard using Cheerio
+ * Returns score strings or empty array if scraping fails
+ */
+async function scrapeESPNHtml(league) {
+  if (!cheerio) return [];
+  
+  try {
+    const url = ESPN_HTML_URLS[league];
+    const html = await fetchText(url);
+    const $ = cheerio.load(html);
+    const scores = [];
+    
+    // ESPN uses ScoreboardScoreCell components - look for game containers
+    // The structure varies but typically includes team abbreviations and scores
+    $('.ScoreboardScoreCell, .scoreboard-page .ScoreCell').each((_, el) => {
+      const $el = $(el);
+      // Try to find team names/abbreviations and scores
+      const teams = $el.find('.ScoreCell__TeamName, .Scoreboard__TeamName').map((_, t) => $(t).text().trim()).get();
+      const scoreVals = $el.find('.ScoreCell__Score, .Scoreboard__Score').map((_, s) => $(s).text().trim()).get();
+      
+      if (teams.length >= 2 && scoreVals.length >= 2) {
+        const statusEl = $el.find('.ScoreCell__Time, .ScoreboardScoreCell__Time').first();
+        const status = statusEl.text().trim() || '';
+        scores.push(`${teams[0]} ${scoreVals[0]} @ ${teams[1]} ${scoreVals[1]} ${status}`);
+      }
+    });
+    
+    return scores;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Unified ESPN score fetcher with HTML fallback
+ */
+async function fetchESPNScores(league) {
+  try {
+    // Try ESPN API first
+    const url = ESPN_ENDPOINTS[league];
+    const js = await fetchJson(url);
+    const scores = parseESPNScores(js);
+    
+    if (scores.length > 0) {
+      return scores;
+    }
+    
+    // If API returned no games, try HTML scraping as fallback
+    return await scrapeESPNHtml(league);
+  } catch {
+    // API failed, try HTML scraping as fallback
+    return await scrapeESPNHtml(league);
+  }
+}
+
+// Individual league score functions using unified ESPN API
 async function nhlScores() {
-  try {
-    // New NHL API (api-web.nhle.com) - old statsapi.web.nhl.com is deprecated
-    // Query with yesterday's date to ensure we get yesterday's games in the week
-    const yesterday = getYesterday(today);
-    const tomorrow = getTomorrow(today);
-    const js = await fetchJson(`https://api-web.nhle.com/v1/schedule/${yesterday}`);
-
-    // Filter to only yesterday, today, and tomorrow
-    const validDates = new Set([yesterday, today, tomorrow]);
-    const days = (js.gameWeek || []).filter(day => validDates.has(day.date));
-    const games = days.flatMap(day => day.games);
-
-    return games.map(g => {
-      const a = g.awayTeam?.abbrev || 'AWAY';
-      const h = g.homeTeam?.abbrev || 'HOME';
-      const as = g.awayTeam?.score ?? 0;
-      const hs = g.homeTeam?.score ?? 0;
-      const state = g.gameState || '';
-      // Map game states: OFF=Final, LIVE=In Progress, FUT=Scheduled, PRE=Pre-game
-      const status = state === 'OFF' ? 'Final' : state === 'LIVE' ? 'Live' : state === 'FUT' ? 'Scheduled' : state;
-      return `${a} ${as} @ ${h} ${hs} ${status}`;
-    });
-  } catch { return []; }
+  return fetchESPNScores('nhl');
 }
+
 async function mlbScores() {
-  try {
-    const js = await fetchJson(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${today}`);
-    const games = js.dates?.[0]?.games || [];
-    return games.map(g => {
-      const a = g.teams.away.team.abbreviation || g.teams.away.team.name;
-      const h = g.teams.home.team.abbreviation || g.teams.home.team.name;
-      const as = g.teams.away.score ?? 0, hs = g.teams.home.score ?? 0;
-      const status = g.status?.detailedState || '';
-      return `${a} ${as} @ ${h} ${hs} ${status}`;
-    });
-  } catch { return []; }
+  return fetchESPNScores('mlb');
 }
+
 async function nbaScores() {
-  try {
-    const js = await fetchJson('https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json');
-    // NBA API structure: games are under scoreboard.games
-    const games = js.scoreboard?.games || js.games || [];
-    return games.map(g => {
-      const a = g.awayTeam?.teamTricode, h = g.homeTeam?.teamTricode;
-      const as = g.awayTeam?.score ?? 0, hs = g.homeTeam?.score ?? 0;
-      const status = g.gameStatusText || '';
-      return `${a} ${as} @ ${h} ${hs} ${status}`;
-    });
-  } catch { return []; }
+  return fetchESPNScores('nba');
 }
+
 async function nflScores() {
-  try {
-    const js = await fetchJson('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard');
-    const events = js.events || [];
-    return events.map(ev => {
-      const c = ev.competitions?.[0];
-      const a = c.competitors.find(t => t.homeAway === 'away');
-      const h = c.competitors.find(t => t.homeAway === 'home');
-      const status = c.status?.type?.shortDetail || '';
-      return `${a.team.abbreviation} ${a.score} @ ${h.team.abbreviation} ${h.score} ${status}`;
-    });
-  } catch { return []; }
+  return fetchESPNScores('nfl');
 }
 
 const [nhl, mlb, nba, nfl] = await Promise.all([nhlScores(), mlbScores(), nbaScores(), nflScores()]);

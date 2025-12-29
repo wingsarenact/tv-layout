@@ -14,8 +14,12 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
 .top-zone .datetime { padding-left: 30px; position: relative; z-index: 2; justify-self: start; display: flex; flex-direction: column; align-items: flex-start; row-gap: 6px; font-size: 36px; font-weight: 600; letter-spacing: 0.5px; opacity: 0.95; }
 #date-text { text-align: left; }
 #time-text { text-align: left; min-width: 0; }
+.time-row { display: flex; align-items: center; gap: 16px; }
+.countdown { font-size: 28px; font-weight: 600; color: #FFD700; opacity: 0.9; }
+.countdown.hidden { display: none; }
 .top-zone .logo { justify-self: center; display: flex; align-items: center; justify-content: center; position: relative; z-index: 2; }
 .top-zone #logo-img { width: 200px; height: 200px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5)); }
+.top-zone #logo-img.new-years-logo { width: 400px; height: 200px; object-fit: contain; }
 .santa-hat-overlay { position: absolute; top: -60px; left: 50%; transform: translateX(-50%); width: 120px; height: 80px; background-image: url('assets/festive/santa_hat.png'); background-size: contain; background-repeat: no-repeat; background-position: center top; display: none; pointer-events: none; z-index: 3; }
 .santa-hat-overlay.christmas { display: block; }
 .top-zone .weather { padding-right: 30px; width: 100%; max-width: 860px; justify-content: flex-end; position: relative; z-index: 2; justify-self: end; display: flex; flex-direction: row; align-items: center; gap: 20px; }
@@ -23,6 +27,20 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
 #weather-icon { width: 64px; height: 64px; display: block; }
 .weather-temp { font-size: 40px; font-weight: 800; line-height: 1; }
 .weather-range { position: relative; width: 380px; }
+.weather-alert { 
+  position: absolute; 
+  top: -32px; 
+  left: 0; 
+  right: 0; 
+  text-align: center; 
+  color: #ff4444; 
+  font-weight: 700; 
+  font-size: 20px; 
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis;
+}
+.weather-alert.hidden { display: none; }
 .weather-range-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; }
 .weather-range .min { color: rgba(255,255,255,0.8); font-weight: 600; font-size: 32px; }
 .weather-range .max { color: rgba(255,255,255,1); font-weight: 800; font-size: 32px; }

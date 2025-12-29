@@ -3,17 +3,20 @@ window.WINGS_TV_CONFIG = {
     dataBaseUrl: 'https://wingsarenact.github.io/tv-data',
   // Autoscale the 1920x1080 canvas to the player window. Set to false for exact 1:1.
   autoScale: true,
-  // Location for weather (Newark, DE as example - update as needed)
+  // Location for weather (Stamford, CT - zip 06902)
   location: {
-    latitude: 41.0534,
-    longitude: -73.5387,
-    timezone: 'America/New_York'
+    latitude: 41.05949,
+    longitude: -73.54751,
+    timezone: 'America/New_York',
+    // Optional: Custom User-Agent for NWS API (required by NWS, defaults to 'Wings Arena TV (contact@example.com)')
+    // nwsUserAgent: 'Wings Arena TV (your-email@example.com)'
   },
   locationName: 'Stamford, CT',
 
   // Logo asset path
   logoSrc: 'assets/logo.png',
   logoChristmasSrc: 'assets/festive/logo_christmas.png',
+  logoNewYearsSrc: 'assets/festive/logo_newyears.gif',
 
 
   // Static images playlist (can be absolute URLs). Drive disabled when Dropbox is configured.

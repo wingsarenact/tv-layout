@@ -1,6 +1,12 @@
 (() => {
   const config = window.WINGS_TV_CONFIG || {};
 
+  // ========== PREVIEW MODES ==========
+  // Set to true to preview holiday decorations regardless of date
+  const PREVIEW_CHRISTMAS = false;
+  const PREVIEW_NEW_YEARS = false;
+  // ====================================
+
   // Utilities
   const $ = (id) => document.getElementById(id);
 
@@ -183,6 +189,8 @@
     const timeEl = $('time-text');
     if (dateEl) dateEl.textContent = dateStr;
     if (timeEl) timeEl.textContent = timeStr;
+    // Update New Year's countdown if in range
+    updateCountdown();
   }
 
   // Weather using Open-Meteo
@@ -329,6 +337,93 @@
     return data;
   }
 
+  async function fetchWeatherAlerts() {
+    const { latitude, longitude } = config.location || {};
+    if (!latitude || !longitude) return null;
+    
+    try {
+      // Step 1: Get grid point from coordinates
+      const pointsUrl = `https://api.weather.gov/points/${latitude},${longitude}`;
+      const userAgent = (config.location && config.location.nwsUserAgent) || 'Wings Arena TV (contact@example.com)';
+      const pointsRes = await fetch(pointsUrl, {
+        headers: { 'User-Agent': userAgent }
+      });
+      if (!pointsRes.ok) {
+        console.warn('NWS points API failed:', pointsRes.status, pointsRes.statusText);
+        return null;
+      }
+      const pointsData = await pointsRes.json();
+      const forecastZoneUrl = pointsData.properties?.forecastZone;
+      const countyZoneUrl = pointsData.properties?.county;
+      
+      // Step 2: Extract zone codes from URLs and fetch alerts
+      // NWS API uses /alerts/active?zone=ZONECODE format
+      const zoneCodes = [];
+      
+      // Extract zone code from forecast zone URL (e.g., "CTZ009" from full URL)
+      if (forecastZoneUrl) {
+        const match = forecastZoneUrl.match(/\/([A-Z]{2}[ZC]\d{3})$/);
+        if (match) zoneCodes.push(match[1]);
+      }
+      
+      // Extract zone code from county URL (e.g., "CTC001" from full URL)
+      if (countyZoneUrl) {
+        const match = countyZoneUrl.match(/\/([A-Z]{2}[ZC]\d{3})$/);
+        if (match) zoneCodes.push(match[1]);
+      }
+      
+      if (zoneCodes.length === 0) {
+        console.warn('No forecast or county zone codes found');
+        return null;
+      }
+      
+      // Fetch alerts from all available zones using the correct endpoint
+      const allAlerts = [];
+      for (const zoneCode of zoneCodes) {
+        try {
+          const alertsUrl = `https://api.weather.gov/alerts/active?zone=${zoneCode}`;
+          const alertsRes = await fetch(alertsUrl, {
+            headers: { 'User-Agent': userAgent }
+          });
+          if (alertsRes.ok) {
+            const alertsData = await alertsRes.json();
+            if (alertsData.features && alertsData.features.length > 0) {
+              allAlerts.push(...alertsData.features);
+            }
+          } else {
+            console.warn('NWS alerts API failed for zone', zoneCode, alertsRes.status);
+          }
+        } catch (e) {
+          console.warn('Failed to fetch alerts for zone', zoneCode, e);
+        }
+      }
+      
+      // Filter to active alerts only and remove duplicates
+      const seenIds = new Set();
+      const activeAlerts = allAlerts
+        .filter(f => {
+          const id = f.id || f.properties?.id;
+          if (seenIds.has(id)) return false;
+          seenIds.add(id);
+          return f.properties?.status === 'Actual';
+        })
+        .map(f => ({
+          event: f.properties.event,
+          headline: f.properties.headline,
+          description: f.properties.description,
+          effective: f.properties.effective,
+          expires: f.properties.expires,
+          severity: f.properties.severity,
+          urgency: f.properties.urgency
+        }));
+      
+      return activeAlerts.length > 0 ? activeAlerts : null;
+    } catch (e) {
+      console.warn('Weather alerts fetch failed', e);
+      return null;
+    }
+  }
+
   function renderWeather(data) {
     try {
       const current = data.current_weather;
@@ -399,6 +494,47 @@
     }
   }
 
+  function renderWeatherAlert(alerts) {
+    const alertEl = $('weather-alert');
+    if (!alertEl) return;
+    
+    if (!alerts || alerts.length === 0) {
+      alertEl.classList.add('hidden');
+      return;
+    }
+    
+    // Get the most urgent alert (prioritize warnings over advisories)
+    const sortedAlerts = alerts.sort((a, b) => {
+      const severityOrder = { 'Extreme': 0, 'Severe': 1, 'Moderate': 2, 'Minor': 3, 'Unknown': 4 };
+      return (severityOrder[a.severity] || 4) - (severityOrder[b.severity] || 4);
+    });
+    const alert = sortedAlerts[0];
+    
+    // Format expiration time
+    let expiresText = '';
+    if (alert.expires) {
+      // NWS API returns times in ISO 8601 format, typically UTC
+      // Ensure we parse it correctly - if no timezone specified, treat as UTC
+      let expiresDateStr = alert.expires;
+      // If the string doesn't end with Z or have timezone offset, assume UTC
+      if (!expiresDateStr.endsWith('Z') && !expiresDateStr.match(/[+-]\d{2}:\d{2}$/)) {
+        expiresDateStr = expiresDateStr + 'Z';
+      }
+      const expiresDate = new Date(expiresDateStr);
+      const timezone = (config.location && config.location.timezone) || 'America/New_York';
+      const timeStr = expiresDate.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true,
+        timeZone: timezone
+      });
+      expiresText = ` until ${timeStr}`;
+    }
+    
+    alertEl.textContent = `${alert.event}${expiresText}`;
+    alertEl.classList.remove('hidden');
+  }
+
   async function renderWeatherIcon(iconUrl) {
     // Always use <object> so SMIL/CSS animations inside the SVG run
     renderWeatherIconViaObject(iconUrl);
@@ -423,11 +559,18 @@
     try {
       const data = await fetchWeather();
       renderWeather(data);
+      
+      // Fetch and display alerts
+      const alerts = await fetchWeatherAlerts();
+      renderWeatherAlert(alerts);
+      
       // Refresh every 10 minutes
       setInterval(async () => {
         try {
           const d = await fetchWeather();
           renderWeather(d);
+          const a = await fetchWeatherAlerts();
+          renderWeatherAlert(a);
         } catch (e) { logDiagnostics('Weather refresh failed'); }
       }, 10 * 60 * 1000);
     } catch (e) {
@@ -1021,17 +1164,96 @@
     const img = $('logo-img');
     if (!img) return;
     
-    // Check if it's Christmas time
+    const now = new Date();
+    const month = now.getMonth() + 1; // 1-12
+    const day = now.getDate();
+    
+    // New Year's: Dec 29 - Jan 5 (every year), or preview mode
+    const isNewYears = PREVIEW_NEW_YEARS || (month === 12 && day >= 29) || (month === 1 && day <= 5);
+    // Christmas: Dec 1 - Dec 28 (before New Year's takes over), or preview mode
+    const isChristmas = PREVIEW_CHRISTMAS || (month === 12 && day >= 1 && day <= 28);
+    
+    // New Years preview takes priority over Christmas preview
+    if (isNewYears && config.logoNewYearsSrc) {
+      img.src = config.logoNewYearsSrc;
+      img.classList.add('new-years-logo');
+    } else {
+      img.classList.remove('new-years-logo');
+      if (isChristmas && config.logoChristmasSrc) {
+        img.src = config.logoChristmasSrc;
+      } else if (config.logoSrc) {
+        img.src = config.logoSrc;
+      }
+    }
+  }
+
+  // New Year's Countdown Functions
+  function shouldShowCountdown() {
+    if (PREVIEW_NEW_YEARS) return true;
     const now = new Date();
     const month = now.getMonth() + 1;
     const day = now.getDate();
-    const isChristmas = month === 12 && day >= 1 && day <= 28;
-    
-    if (isChristmas && config.logoChristmasSrc) {
-      img.src = config.logoChristmasSrc;
-    } else if (config.logoSrc) {
-      img.src = config.logoSrc;
+    // Show countdown Dec 29-31 only (before midnight Jan 1)
+    return month === 12 && day >= 29;
+  }
+
+  function shouldShowHappyNewYear() {
+    if (PREVIEW_NEW_YEARS) {
+      // In preview mode, show "Happy New Year!" if we're past the new year
+      const now = new Date();
+      const target = getNewYearTimestamp();
+      return target - now <= 0;
     }
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+    // Show "Happy New Year!" on Jan 1-5
+    return month === 1 && day >= 1 && day <= 5;
+  }
+
+  function getNewYearTimestamp() {
+    const now = new Date();
+    // Target: Jan 1 of next year at midnight in local time
+    return new Date(now.getFullYear() + 1, 0, 1, 0, 0, 0, 0);
+  }
+
+  function updateCountdown() {
+    const el = $('countdown-text');
+    if (!el) return;
+    
+    // Check if we should show "Happy New Year!" message (Jan 1-5)
+    if (shouldShowHappyNewYear()) {
+      el.textContent = 'Happy New Year!';
+      el.classList.remove('hidden');
+      return;
+    }
+    
+    // Check if we should show countdown (Dec 29-31)
+    if (!shouldShowCountdown()) {
+      el.classList.add('hidden');
+      return;
+    }
+    
+    const now = new Date();
+    const target = getNewYearTimestamp();
+    const diff = target - now;
+    
+    if (diff <= 0) {
+      // Past midnight, show "Happy New Year!" instead
+      el.textContent = 'Happy New Year!';
+      el.classList.remove('hidden');
+      return;
+    }
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const secs = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    const pad = (n) => n.toString().padStart(2, '0');
+    const nextYear = now.getFullYear() + 1;
+    el.textContent = `${pad(days)}:${pad(hours)}:${pad(mins)}:${pad(secs)} Until ${nextYear}`;
+    el.classList.remove('hidden');
   }
 
   function initFestiveDecorations() {
@@ -1040,35 +1262,33 @@
     const santaHat = $('santa-hat-overlay');
     if (!overlayTop || !overlayBottom) return;
     
-    // PREVIEW MODE: Set to true to preview Christmas decorations
-    const PREVIEW_MODE = false;
-    
-    if (PREVIEW_MODE) {
-      // Show Christmas decorations for preview
-      overlayTop.classList.add('christmas');
-      overlayBottom.classList.add('christmas');
-      if (santaHat) santaHat.classList.add('christmas');
-      updateLogoForHoliday();
-      return;
-    }
-    
     const now = new Date();
     const month = now.getMonth() + 1; // 1-12 (January = 1, December = 12)
     const day = now.getDate();
     
-    // Remove Christmas classes first
+    // Remove all festive classes first
     overlayTop.classList.remove('christmas');
     overlayBottom.classList.remove('christmas');
     if (santaHat) santaHat.classList.remove('christmas');
     
-    // Christmas: Dec 1 - Dec 28
-    if (month === 12 && day >= 1 && day <= 28) {
+    // Check for New Years preview or actual date range (Dec 29 - Jan 5)
+    const isNewYears = PREVIEW_NEW_YEARS || (month === 12 && day >= 29) || (month === 1 && day <= 5);
+    // Check for Christmas preview or actual date range (Dec 1 - Dec 28)
+    const isChristmas = PREVIEW_CHRISTMAS || (month === 12 && day >= 1 && day <= 28);
+    
+    // New Years doesn't have overlay decorations (just logo + countdown)
+    // Christmas has overlay decorations
+    if (isNewYears) {
+      // New Years: no overlay decorations, just logo swap (handled by updateLogoForHoliday)
+      updateLogoForHoliday();
+    } else if (isChristmas) {
+      // Christmas: show overlay decorations
       overlayTop.classList.add('christmas');
       overlayBottom.classList.add('christmas');
       if (santaHat) santaHat.classList.add('christmas');
       updateLogoForHoliday();
     } else {
-      // Not Christmas - use default logo
+      // No holiday - use default logo
       updateLogoForHoliday();
     }
   }

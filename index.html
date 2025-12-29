@@ -17,7 +17,13 @@
     <!-- Top Zone: 1920x180 -->
     <header id="top-zone" class="top-zone">
       <div class="festive-overlay" id="festive-overlay"></div>
-      <div class="datetime" id="datetime"><span id="date-text"></span><span id="time-text"></span></div>
+      <div class="datetime" id="datetime">
+        <span id="date-text"></span>
+        <div class="time-row">
+          <span id="time-text"></span>
+          <span id="countdown-text" class="countdown hidden"></span>
+        </div>
+      </div>
       <div class="logo" id="logo">
         <img id="logo-img" alt="Wings Arena" />
         <div class="santa-hat-overlay" id="santa-hat-overlay"></div>
@@ -28,6 +34,7 @@
           <span id="weather-temp" class="weather-temp"></span>
         </div>
         <div class="weather-range">
+          <div id="weather-alert" class="weather-alert hidden"></div>
           <div class="weather-range-row">
             <span class="min" id="weather-min"></span>
             <div class="range-bar">

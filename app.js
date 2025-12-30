@@ -5,6 +5,11 @@
   // Set to true to preview holiday decorations regardless of date
   const PREVIEW_CHRISTMAS = false;
   const PREVIEW_NEW_YEARS = false;
+  const PREVIEW_EASTER = false;
+  const PREVIEW_VALENTINES = false;
+  const PREVIEW_STPATRICKS = false;
+  const PREVIEW_INDEPENDENCEDAY = false;
+  const PREVIEW_HALLOWEEN = false;
   // ====================================
 
   // Utilities
@@ -1193,14 +1198,18 @@
     const easterWeekStart = new Date(easterDate);
     easterWeekStart.setDate(easterDate.getDate() - 7);
     
-    // Holiday date checks (in priority order - most specific first)
-    const isNewYears = PREVIEW_NEW_YEARS || (month === 12 && day >= 29) || (month === 1 && day <= 5);
-    const isEaster = (now >= easterWeekStart && now < easterDate);
-    const isValentines = (month === 2 && day >= 7 && day <= 14); // Week before Feb 14
-    const isStPatricks = (month === 3 && day >= 16 && day <= 18); // Day before/after March 17
-    const isIndependenceDay = (month === 7 && day >= 1 && day <= 7); // July 1-7
-    const isHalloween = (month === 10 && day >= 18 && day <= 31); // 2 weeks before Oct 31
-    const isChristmas = PREVIEW_CHRISTMAS || (month === 12 && day >= 1 && day <= 28);
+    // Check if any preview mode is active - if so, only use preview modes
+    const hasPreviewMode = PREVIEW_NEW_YEARS || PREVIEW_EASTER || PREVIEW_VALENTINES || 
+                          PREVIEW_STPATRICKS || PREVIEW_INDEPENDENCEDAY || PREVIEW_HALLOWEEN || PREVIEW_CHRISTMAS;
+    
+    // Holiday date checks (preview modes take priority if any are active)
+    const isNewYears = hasPreviewMode ? PREVIEW_NEW_YEARS : (month === 12 && day >= 29) || (month === 1 && day <= 5);
+    const isEaster = hasPreviewMode ? PREVIEW_EASTER : (now >= easterWeekStart && now < easterDate);
+    const isValentines = hasPreviewMode ? PREVIEW_VALENTINES : (month === 2 && day >= 7 && day <= 14); // Week before Feb 14
+    const isStPatricks = hasPreviewMode ? PREVIEW_STPATRICKS : (month === 3 && day >= 16 && day <= 18); // Day before/after March 17
+    const isIndependenceDay = hasPreviewMode ? PREVIEW_INDEPENDENCEDAY : (month === 7 && day >= 1 && day <= 7); // July 1-7
+    const isHalloween = hasPreviewMode ? PREVIEW_HALLOWEEN : (month === 10 && day >= 18 && day <= 31); // 2 weeks before Oct 31
+    const isChristmas = hasPreviewMode ? PREVIEW_CHRISTMAS : (month === 12 && day >= 1 && day <= 28);
     
     // Apply holiday logo (priority order matters)
     if (isNewYears && config.logoNewYearsSrc) {

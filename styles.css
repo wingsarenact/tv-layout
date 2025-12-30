@@ -18,8 +18,7 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
 .countdown { font-size: 28px; font-weight: 600; color: #FFD700; opacity: 0.9; }
 .countdown.hidden { display: none; }
 .top-zone .logo { justify-self: center; display: flex; align-items: center; justify-content: center; position: relative; z-index: 2; }
-.top-zone #logo-img { width: 200px; height: 200px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5)); }
-.top-zone #logo-img.new-years-logo { width: 400px; height: 200px; object-fit: contain; }
+.top-zone #logo-img { width: 360px; height: 180px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5)); }
 .santa-hat-overlay { position: absolute; top: -60px; left: 50%; transform: translateX(-50%); width: 120px; height: 80px; background-image: url('assets/festive/santa_hat.png'); background-size: contain; background-repeat: no-repeat; background-position: center top; display: none; pointer-events: none; z-index: 3; }
 .santa-hat-overlay.christmas { display: block; }
 .top-zone .weather { padding-right: 30px; width: 100%; max-width: 860px; justify-content: flex-end; position: relative; z-index: 2; justify-self: end; display: flex; flex-direction: row; align-items: center; gap: 20px; }
@@ -33,9 +32,9 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
   left: 0; 
   right: 0; 
   text-align: center; 
-  color: #ff4444; 
+  color: rgba(255,255,255,0.75); 
   font-weight: 700; 
-  font-size: 20px; 
+  font-size: 22px; 
   white-space: nowrap; 
   overflow: hidden; 
   text-overflow: ellipsis;

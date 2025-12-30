@@ -1160,28 +1160,73 @@
     updateLogoForHoliday();
   }
 
+  // Calculate Easter Sunday date for a given year (Computus algorithm)
+  function getEasterDate(year) {
+    const a = year % 19;
+    const b = Math.floor(year / 100);
+    const c = year % 100;
+    const d = Math.floor(b / 4);
+    const e = b % 4;
+    const f = Math.floor((b + 8) / 25);
+    const g = Math.floor((b - f + 1) / 3);
+    const h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4);
+    const k = c % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const month = Math.floor((h + l - 7 * m + 114) / 31);
+    const day = ((h + l - 7 * m + 114) % 31) + 1;
+    return new Date(year, month - 1, day);
+  }
+
   function updateLogoForHoliday() {
     const img = $('logo-img');
     if (!img) return;
     
     const now = new Date();
+    const year = now.getFullYear();
     const month = now.getMonth() + 1; // 1-12
     const day = now.getDate();
     
-    // New Year's: Dec 29 - Jan 5 (every year), or preview mode
+    // Calculate Easter for current year
+    const easterDate = getEasterDate(year);
+    const easterWeekStart = new Date(easterDate);
+    easterWeekStart.setDate(easterDate.getDate() - 7);
+    
+    // Holiday date checks (in priority order - most specific first)
     const isNewYears = PREVIEW_NEW_YEARS || (month === 12 && day >= 29) || (month === 1 && day <= 5);
-    // Christmas: Dec 1 - Dec 28 (before New Year's takes over), or preview mode
+    const isEaster = (now >= easterWeekStart && now < easterDate);
+    const isValentines = (month === 2 && day >= 7 && day <= 14); // Week before Feb 14
+    const isStPatricks = (month === 3 && day >= 16 && day <= 18); // Day before/after March 17
+    const isIndependenceDay = (month === 7 && day >= 1 && day <= 7); // July 1-7
+    const isHalloween = (month === 10 && day >= 18 && day <= 31); // 2 weeks before Oct 31
     const isChristmas = PREVIEW_CHRISTMAS || (month === 12 && day >= 1 && day <= 28);
     
-    // New Years preview takes priority over Christmas preview
+    // Apply holiday logo (priority order matters)
     if (isNewYears && config.logoNewYearsSrc) {
       img.src = config.logoNewYearsSrc;
-      img.classList.add('new-years-logo');
+      img.classList.add('holiday-logo');
+    } else if (isEaster && config.logoEasterSrc) {
+      img.src = config.logoEasterSrc;
+      img.classList.add('holiday-logo');
+    } else if (isValentines && config.logoValentinesSrc) {
+      img.src = config.logoValentinesSrc;
+      img.classList.add('holiday-logo');
+    } else if (isStPatricks && config.logoStPatricksDaySrc) {
+      img.src = config.logoStPatricksDaySrc;
+      img.classList.add('holiday-logo');
+    } else if (isIndependenceDay && config.logoIndependenceDaySrc) {
+      img.src = config.logoIndependenceDaySrc;
+      img.classList.add('holiday-logo');
+    } else if (isHalloween && config.logoHalloweenSrc) {
+      img.src = config.logoHalloweenSrc;
+      img.classList.add('holiday-logo');
+    } else if (isChristmas && config.logoChristmasSrc) {
+      img.src = config.logoChristmasSrc;
+      img.classList.add('holiday-logo');
     } else {
-      img.classList.remove('new-years-logo');
-      if (isChristmas && config.logoChristmasSrc) {
-        img.src = config.logoChristmasSrc;
-      } else if (config.logoSrc) {
+      img.classList.remove('holiday-logo');
+      if (config.logoSrc) {
         img.src = config.logoSrc;
       }
     }

@@ -13,10 +13,15 @@ window.WINGS_TV_CONFIG = {
   },
   locationName: 'Stamford, CT',
 
-  // Logo asset path
+  // Logo asset paths
   logoSrc: 'assets/logo.png',
-  logoChristmasSrc: 'assets/festive/logo_christmas.png',
+  logoChristmasSrc: 'assets/festive/logo_christmas.gif',
   logoNewYearsSrc: 'assets/festive/logo_newyears.gif',
+  logoEasterSrc: 'assets/festive/logo_easter.gif',
+  logoValentinesSrc: 'assets/festive/logo_valentines.gif',
+  logoHalloweenSrc: 'assets/festive/logo_halloween.gif',
+  logoStPatricksDaySrc: 'assets/festive/logo_stpatricksday.gif',
+  logoIndependenceDaySrc: 'assets/festive/logo_independenceday.gif',
 
 
   // Static images playlist (can be absolute URLs). Drive disabled when Dropbox is configured.

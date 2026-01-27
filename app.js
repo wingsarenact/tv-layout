@@ -629,24 +629,23 @@
         logDiagnostics(`Static images: ${urls.length}`);
       }
     } else {
-      // Auto-detect local static images, but start loading first image immediately
+      // Auto-detect local static images, but show the first image immediately
       const firstImagePath = 'assets/static/ad01.png';
-      
-      // Try to load first image immediately (don't wait for full detection)
+
+      // Optimistically hide placeholder and show first image right away.
+      // The <img> tag in index.html already points at this path, so this
+      // just ensures the placeholder disappears immediately at runtime.
+      if (placeholder) placeholder.classList.add('hidden');
+      img.src = firstImagePath;
+
       const firstImgTest = new Image();
-      let firstImageStarted = false;
-      
-      firstImgTest.onload = () => {
-        // First image exists! Start showing it right away
-        if (placeholder) placeholder.classList.add('hidden');
-        firstImageStarted = true;
-        img.src = firstImagePath;
-      };
+      let firstImageStarted = true;
       firstImgTest.onerror = () => {
-        // First image doesn't exist, will check after detection
+        // If the file is actually missing, allow detection logic to fall back
+        firstImageStarted = false;
       };
       firstImgTest.src = firstImagePath;
-      
+
       // Continue with full detection in the background
       const localImages = await detectLocalStaticImages();
       if (localImages.length) {

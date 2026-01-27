@@ -586,105 +586,28 @@
 
   // Static Ads
   async function initStaticAds() {
-    let list = [];
-    let firstShownAt = null; // timestamp when the first static image became visible
+    // All static ads are stored locally; use the explicit playlist from config
+    let list = (config.staticAds && Array.isArray(config.staticAds.items))
+      ? config.staticAds.items.filter(Boolean)
+      : [];
     const rotationMs = (config.staticAds && config.staticAds.rotationMs) || 15000;
     const img = $('static-image');
     const imgBuffer = $('static-image-buffer');
     const placeholder = $('static-placeholder');
-    const playlistCsvUrl = config.staticAds && config.staticAds.playlistCsvUrl;
-    const dropboxPath = config.staticAds && config.staticAds.dropboxFolderPath;
-    const dropboxShared = config.staticAds && config.staticAds.dropboxSharedLinkUrl;
-    const driveFolderUrl = null; // disable Drive when Dropbox is configured
-    
-    if (playlistCsvUrl) {
-      const lines = await fetchCsvLines(playlistCsvUrl);
-      const body = lines.slice(1);
-      const urls = body.map(parseUrlFromCsvLine).filter(Boolean);
-      if (urls.length) {
-        list = urls;
-        logDiagnostics(`Static images: ${urls.length}`);
-      }
-    } else if (dropboxShared) {
-      const entries = await dropboxListFolderBySharedLink(dropboxShared);
-      const imgs = entries.filter(e => /\.(png|jpe?g|gif|webp)$/i.test(e.name));
-      const urls = [];
-      for (const f of imgs) {
-        const u = await dropboxDownloadToBlobUrl(f.path_lower || (f.path_display && f.path_display.toLowerCase()));
-        if (u) urls.push(u);
-      }
-      if (urls.length) {
-        list = urls;
-        logDiagnostics(`Static images: ${urls.length}`);
-      }
-    } else if (dropboxPath) {
-      const entries = await dropboxListFolder(dropboxPath);
-      const imgs = entries.filter(e => /\.(png|jpe?g|gif|webp)$/i.test(e.name));
-      const urls = [];
-      for (const f of imgs) {
-        const u = await dropboxDownloadToBlobUrl(f.path_lower);
-        if (u) urls.push(u);
-      }
-      if (urls.length) {
-        list = urls;
-        logDiagnostics(`Static images: ${urls.length}`);
-      }
-    } else {
-      // Auto-detect local static images, but show the first image immediately
-      const firstImagePath = 'assets/static/ad01.png';
 
-      // Optimistically hide placeholder and show first image right away.
-      // The <img> tag in index.html already points at this path, so this
-      // just ensures the placeholder disappears immediately at runtime.
-      if (placeholder) placeholder.classList.add('hidden');
-      img.src = firstImagePath;
-      firstShownAt = Date.now();
-
-      const firstImgTest = new Image();
-      let firstImageStarted = true;
-      firstImgTest.onerror = () => {
-        // If the file is actually missing, allow detection logic to fall back
-        firstImageStarted = false;
-      };
-      firstImgTest.src = firstImagePath;
-
-      // Continue with full detection in the background
-      const localImages = await detectLocalStaticImages();
-      if (localImages.length) {
-        list = localImages;
-        logDiagnostics(`Static images: ${list.length}`);
-        
-        // If first image wasn't already loading, start it now
-        if (!firstImageStarted && list[0]) {
-          if (placeholder) placeholder.classList.add('hidden');
-          img.src = list[0];
-        }
-      } else if (!firstImageStarted) {
-        // No images found and first didn't load
-        if (placeholder) placeholder.classList.remove('hidden'); 
-        img.alt = ''; 
-        if (imgBuffer) imgBuffer.alt = '';
-        return;
-      }
-    }
-    
     if (!list.length) { 
-      // Only show placeholder if no images were detected and none loaded
-      if (placeholder && !img.src.includes('ad')) {
-        placeholder.classList.remove('hidden'); 
-        img.alt = ''; 
-        if (imgBuffer) imgBuffer.alt = '';
-      }
+      // No local items configured; show placeholder and exit
+      if (placeholder) placeholder.classList.remove('hidden');
+      if (img) img.alt = '';
+      if (imgBuffer) imgBuffer.alt = '';
       return; 
     }
     
     if (placeholder) placeholder.classList.add('hidden');
     
-    // Determine starting index - if first image already loaded, start at index 1
-    let idx = 0;
-    if (list.length > 0 && (img.src === list[0] || img.src.includes('ad01'))) {
-      idx = 1;
-    }
+    // Show the first image immediately and start rotation at the second image.
+    img.src = list[0];
+    let idx = 1;
     
     let isTransitioning = false;
     let currentImg = img; // Track which image is currently visible
@@ -763,21 +686,12 @@
       }
     };
     
-    // Set up interval for rotation
+    // Set up interval for rotation — the first ad (list[0]) is visible
+    // immediately, and the first call to show() happens exactly after
+    // rotationMs, so every ad (including the first) is on-screen for
+    // exactly rotationMs milliseconds.
     if (list.length > 0) {
-      // If we already showed the first image (local assets case), make sure
-      // it stays on-screen for a full rotationMs before the first swap.
-      if (firstShownAt) {
-        const elapsed = Date.now() - firstShownAt;
-        const initialDelay = Math.max(0, rotationMs - elapsed);
-        setTimeout(() => {
-          show();
-          setInterval(show, rotationMs);
-        }, initialDelay);
-      } else {
-        // For playlist/Dropbox cases, start rotation immediately as before.
-        setInterval(show, rotationMs);
-      }
+      setInterval(show, rotationMs);
     }
   }
 

@@ -27,12 +27,14 @@ window.WINGS_TV_CONFIG = {
   // Static images playlist (can be absolute URLs). Drive disabled when Dropbox is configured.
   staticAds: {
     rotationMs: 8000,
-    // Placeholder-driven; external playlists handled by Mvix
-    playlistCsvUrl: '',
-    // Use this Drive folder to auto-list images (anyone-with-link must be viewer):
-    driveFolderUrl: '',
-    // Auto-detects images in assets/static/ folder (ad01.png, ad02.png, etc.)
-    items: []
+    // Local static ads playlist; all ads are stored in assets/static/
+    // Configure the exact list you want to rotate through, in order.
+    items: [
+      'assets/static/ad01.png',
+      'assets/static/ad02.png',
+      'assets/static/ad03.png',
+      'assets/static/ad04.png'
+    ]
   },
 
   // Video playlist (MP4/H.264 recommended). Drive disabled when Dropbox is configured.

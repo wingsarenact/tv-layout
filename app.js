@@ -587,6 +587,7 @@
   // Static Ads
   async function initStaticAds() {
     let list = [];
+    let firstShownAt = null; // timestamp when the first static image became visible
     const rotationMs = (config.staticAds && config.staticAds.rotationMs) || 15000;
     const img = $('static-image');
     const imgBuffer = $('static-image-buffer');
@@ -637,6 +638,7 @@
       // just ensures the placeholder disappears immediately at runtime.
       if (placeholder) placeholder.classList.add('hidden');
       img.src = firstImagePath;
+      firstShownAt = Date.now();
 
       const firstImgTest = new Image();
       let firstImageStarted = true;
@@ -763,7 +765,19 @@
     
     // Set up interval for rotation
     if (list.length > 0) {
-      setInterval(show, rotationMs);
+      // If we already showed the first image (local assets case), make sure
+      // it stays on-screen for a full rotationMs before the first swap.
+      if (firstShownAt) {
+        const elapsed = Date.now() - firstShownAt;
+        const initialDelay = Math.max(0, rotationMs - elapsed);
+        setTimeout(() => {
+          show();
+          setInterval(show, rotationMs);
+        }, initialDelay);
+      } else {
+        // For playlist/Dropbox cases, start rotation immediately as before.
+        setInterval(show, rotationMs);
+      }
     }
   }
 

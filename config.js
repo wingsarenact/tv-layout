@@ -1,8 +1,10 @@
 window.WINGS_TV_CONFIG = {
-    // Optional external data host (GitHub Pages data repo)
-    dataBaseUrl: 'https://wingsarenact.github.io/tv-data',
+  // Optional external data host (GitHub Pages data repo)
+  dataBaseUrl: 'https://wingsarenact.github.io/tv-data',
+
   // Autoscale the 1920x1080 canvas to the player window. Set to false for exact 1:1.
   autoScale: true,
+
   // Location for weather (Stamford, CT - zip 06902)
   location: {
     latitude: 41.05949,
@@ -11,6 +13,7 @@ window.WINGS_TV_CONFIG = {
     // Optional: Custom User-Agent for NWS API (required by NWS, defaults to 'Wings Arena TV (contact@example.com)')
     // nwsUserAgent: 'Wings Arena TV (your-email@example.com)'
   },
+
   locationName: 'Stamford, CT',
 
   // Logo asset paths
@@ -23,7 +26,6 @@ window.WINGS_TV_CONFIG = {
   logoStPatricksDaySrc: 'assets/festive/logo_stpatricksday.gif',
   logoIndependenceDaySrc: 'assets/festive/logo_independenceday.gif',
 
-
   // Static images playlist (can be absolute URLs). Drive disabled when Dropbox is configured.
   staticAds: {
     rotationMs: 8000,
@@ -35,7 +37,8 @@ window.WINGS_TV_CONFIG = {
       'assets/static/ad03.png',
       'assets/static/ad04.png',
       'assets/static/ad05.png',
-      'assets/static/ad06.png'
+      'assets/static/ad06.png',
+      'assets/static/ad07.jpg'
     ]
   },
 
@@ -56,11 +59,11 @@ window.WINGS_TV_CONFIG = {
     perSourceMs: 30000,
     sources: [
       { name: 'ESPN', url: 'https://www.espn.com/espn/rss/news' },
-      { name: 'Weather', type: 'weather' },  // Weather appears early in rotation
+      { name: 'Weather', type: 'weather' }, // Weather appears early in rotation
       { name: 'NHL News', url: 'https://thehockeywriters.com/feed/' },
       { name: 'FOX Sports', url: 'https://www.foxsports.com/feedout/syndicatedContent?categoryId=0' },
       { name: 'NHL Scores', type: 'scores', league: 'nhl' },
-      { name: 'Weather', type: 'weather' },  // Weather appears again mid-rotation
+      { name: 'Weather', type: 'weather' }, // Weather appears again mid-rotation
       { name: 'NBA Scores', type: 'scores', league: 'nba' },
       { name: 'CBS Sports', url: 'https://www.cbssports.com/rss/headlines/' },
       { name: 'MLB Scores', type: 'scores', league: 'mlb' },
@@ -68,5 +71,3 @@ window.WINGS_TV_CONFIG = {
     ]
   }
 };
-
-

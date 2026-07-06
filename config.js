@@ -36,8 +36,8 @@ window.WINGS_TV_CONFIG = {
       'assets/static/ad02.png',
       'assets/static/ad03.png',
       'assets/static/ad04.png',
-      'assets/static/ad05.png',
-      'assets/static/ad06.png'
+      'assets/static/ad06.png',
+      'assets/static/ad07.png'
     ]
   },
 
